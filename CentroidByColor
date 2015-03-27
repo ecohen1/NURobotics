@@ -1,0 +1,86 @@
+# -*- coding: utf-8 -*-
+
+import cv2
+import cv2.cv as cv
+import numpy as np
+
+cap = cv2.VideoCapture(0)
+capture = cv.CaptureFromCAM( 0 )
+#frame0 = cap.read()
+#cv2.imshow('hi',frame0)
+#print frame0.shape
+img2=cv.QueryFrame(capture)
+w = img2.width
+h = img2.height
+print 'Resolution is: ',w,' by ',h
+
+while(1):
+    #set center of mass to center
+    p1 = (w/2,h/2)
+    
+    # Take each frame
+    _, frame = cap.read()
+
+    # Convert BGR to HSV
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    # define range of color in HSV (purple)
+    lower_blue = np.array([120,50,50])
+    upper_blue = np.array([140,255,255])
+        
+    kernel = np.ones((10,10),np.uint8)
+    # Threshold the HSV image to get only blue colors
+    mask = cv2.inRange(hsv, lower_blue, upper_blue)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    
+    # Bitwise-AND mask and original image
+    res = cv2.bitwise_and(frame,frame, mask= mask)    
+    
+    #find center of mass
+    m = cv2.moments(mask)
+    if m['m00'] != 0:
+        p1 = (int(m['m10']/m['m00']), int(m['m01']/m['m00']))
+
+        #draw rectangle    
+        cv2.rectangle(res,(p1[0]-5,p1[1]+5),(p1[0]+5,p1[1]-5),[50,50,50],5)
+        cv2.rectangle(frame,(p1[0]-5,p1[1]+5),(p1[0]+5,p1[1]-5),[50,50,50],5)
+        
+    #draw separation lines on screen
+    cv2.line(frame,(0,0),(640,480),[50,50,50])
+    cv2.line(frame,(640,0),(0,480),[50,50,50])
+    cv2.line(frame,(320,0),(320,640),[50,50,50])
+    cv2.line(frame,(0,240),(640,240),[50,50,50])
+
+    #denote section number, clockwise 1-8
+    if p1[1] < .75*p1[0] and p1[1] < -.75*p1[0] + h:
+        if p1[0] > w/2:
+            print 1
+        else:
+            print 8
+    elif p1[1] < .75*p1[0] and p1[1] > -.75*p1[0] + h:
+        if p1[1] < h/2:
+            print 2
+        else:
+            print 3
+    elif p1[1] > .75*p1[0] and p1[1] > -.75*p1[0] + h:
+        if p1[0] > w/2:
+            print 4
+        else:
+            print 5
+    elif p1[1] > .75*p1[0] and p1[1] < -.75*p1[0] + h:
+        if p1[1] > h/2:
+            print 6
+        else:
+            print 7
+    else:
+        print '-'
+
+    #press ESC to exit
+    cv2.imshow('frame',frame)
+    cv2.imshow('mask',mask)
+    cv2.imshow('res',res)
+    k = cv2.waitKey(5) & 0xFF
+    if k == 27:
+        break
+
+cv2.destroyAllWindows()
