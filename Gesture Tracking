@@ -1,0 +1,72 @@
+import cv2
+import numpy as np
+
+global kernel, kernel2,size
+kernel = np.ones((15,15),np.uint8)
+kernel2 = np.ones((10,10),np.uint8)
+size = 7
+
+cam = cv2.VideoCapture(0)
+    
+def diffImg(t1, t2):
+  d1 = cv2.absdiff(t1, t2) 
+  return cv2.dilate(cv2.morphologyEx(d1, cv2.MORPH_OPEN, kernel),kernel2)
+  
+def swipeDir(dir_mat):
+  size = len(direction[:,0])-1
+  x_diff = direction[size,0] - direction[0,0]
+  y_diff = direction[size,1] - direction[0,1]
+  if abs(x_diff) > abs(y_diff):
+      if x_diff > 0:
+          print 'left'
+      else:
+          print 'right'
+  else:
+      if y_diff > 0:
+          print 'down'
+      else:
+          print 'up'
+      
+
+#allocate space for direction matrix
+direction = np.zeros(shape=(size,2))
+count = 0
+
+winName = "Movement Indicator"
+cv2.namedWindow(winName, cv2.CV_WINDOW_AUTOSIZE)
+
+# Read three images first:
+t = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
+t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
+
+while True:
+  diff = diffImg(t, t_plus)
+  cv2.imshow( winName, diff )
+
+  # Read next image
+  t = t_plus
+  t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
+  
+  _, frame = cam.read()
+  cv2.imshow('frame',frame)  
+  
+  #find center of mass
+  m = cv2.moments(diff)
+  if m['m00'] != 0:
+      if count < size:
+          flag = 1
+          p1 = (int(m['m10']/m['m00']), int(m['m01']/m['m00']))
+          direction[count] = p1 
+          count += 1
+      else:
+          count = 0
+          swipeDir(direction)
+  else:
+      flag = 0
+      count = 0
+      
+
+  key = cv2.waitKey(10)
+  if key == 27:
+    cv2.destroyAllWindows()
+    break
