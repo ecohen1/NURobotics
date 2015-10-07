@@ -21,7 +21,7 @@ while(1):
     # Take each frame
     _, frame = cap.read()
 
-    # Convert BGR to HSV
+    # Convert BGR to HSV 
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # define range of color in HSV (purple)
