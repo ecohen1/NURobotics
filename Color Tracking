@@ -1,0 +1,88 @@
+import cv2
+import numpy as np
+
+cap = cv2.VideoCapture(0)
+
+kernel = np.ones((3,3),np.uint8)
+kernel2 = np.ones((5,5),np.uint8)
+
+def avg(frame,pt):
+    sum = 0
+    ptx = pt[0]-5
+    pty = pt[1]-5
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
+    itr = 10
+    for i in range (itr):
+        ptx = pt[0]
+        for j in range (itr):
+            sum += hsv[ptx,pty][0]
+            ptx += 1
+        pty += 1
+    return sum/(itr**2)
+
+while True:
+    # Take each frame
+    _, frame = cap.read()
+
+    cv2.circle(frame,(300,180),5,[0,255,255])
+    cv2.circle(frame,(340,180),5,[0,255,255])
+    cv2.circle(frame,(300,240),5,[0,255,255])
+    cv2.circle(frame,(340,240),5,[0,255,255])
+    cv2.circle(frame,(300,300),5,[0,255,255])
+    cv2.circle(frame,(340,300),5,[0,255,255])  
+    cv2.imshow('frame',frame)      
+    k = cv2.waitKey(5) & 0xFF
+    if k == 27:
+        cv2.destroyAllWindows()
+        break
+    
+hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
+   
+lw = 70    
+hi = 255
+# define range of color in HSV
+lower1 = np.array([avg(frame,(300,180))-10,lw,lw])
+upper1 = np.array([avg(frame,(300,180))+10,hi,hi])
+lower2 = np.array([avg(frame,(340,180))-10,lw,lw])
+upper2 = np.array([avg(frame,(340,180))+10,hi,hi])
+lower3 = np.array([avg(frame,(300,240))-10,lw,lw])
+upper3 = np.array([avg(frame,(300,240))+10,hi,hi])
+lower4 = np.array([avg(frame,(340,240))-10,lw,lw])
+upper4 = np.array([avg(frame,(340,240))+10,hi,hi])
+lower5 = np.array([avg(frame,(300,300))-10,lw,lw])
+upper5 = np.array([avg(frame,(300,300))+10,hi,hi])
+lower6 = np.array([avg(frame,(340,300))-10,lw,lw])
+upper6 = np.array([avg(frame,(340,300))+10,hi,hi])
+
+print lower1,upper1,lower2,upper2,lower3,upper3,lower4,upper4,lower5,upper5,lower6,upper6
+    
+while True:
+
+    _, frame = cap.read()
+
+    # Convert BGR to HSV
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+    # Threshold the HSV image to get only select colors
+    mask1 = cv2.morphologyEx(cv2.inRange(hsv, lower1, upper1), cv2.MORPH_OPEN,kernel2)
+    mask2 = cv2.morphologyEx(cv2.inRange(hsv, lower2, upper2), cv2.MORPH_OPEN,kernel2)
+    mask3 = cv2.morphologyEx(cv2.inRange(hsv, lower3, upper3), cv2.MORPH_OPEN,kernel2)
+    mask4 = cv2.morphologyEx(cv2.inRange(hsv, lower4, upper4), cv2.MORPH_OPEN,kernel2)
+    mask5 = cv2.morphologyEx(cv2.inRange(hsv, lower5, upper5), cv2.MORPH_OPEN,kernel2)
+    mask6 = cv2.morphologyEx(cv2.inRange(hsv, lower6, upper6), cv2.MORPH_OPEN,kernel2)
+    mask_a = cv2.bitwise_or(mask1,mask2)
+    mask_b = cv2.bitwise_or(mask3,mask4)
+    mask_c = cv2.bitwise_or(mask5,mask6)
+    mask_d = cv2.bitwise_or(mask_a,mask_b)
+    mask = cv2.bitwise_or(mask_d,mask_c)
+    
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+    cv2.imshow('frame',frame)
+    cv2.imshow('mask',mask)
+    cv2.imshow('mask1',mask1)
+    k = cv2.waitKey(5) & 0xFF
+    if k == 27:
+        break
+
+cv2.destroyAllWindows()
